@@ -1,3 +1,4 @@
+
 "use client";
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription, DialogClose } from '@/components/ui/dialog';
@@ -13,30 +14,17 @@ interface PaymentModalProps {
   onOpenChange: (open: boolean) => void;
   questionText: string;
   onPaymentSuccess: (questionId: string) => void;
+  randomNumber: number; // Changed: now a required number prop
 }
 
-const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onOpenChange, questionText, onPaymentSuccess }) => {
+const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onOpenChange, questionText, onPaymentSuccess, randomNumber }) => {
   const [isProcessing, setIsProcessing] = useState(false);
-  const [randomNumber, setRandomNumber] = useState<number | null>(null);
   const { toast } = useToast();
 
-  useEffect(() => {
-    if (isOpen && typeof window !== 'undefined') {
-      // Generate random number when modal opens (client-side)
-      setRandomNumber(Math.floor(Math.random() * 249) + 1);
-    }
-  }, [isOpen]);
+  // Removed useEffect for generating randomNumber, as it's now passed as a prop
 
   const handlePayment = async () => {
-    if (!randomNumber) {
-      toast({
-        title: "Error",
-        description: "Could not generate a number for your question. Please try again.",
-        variant: "destructive",
-      });
-      return;
-    }
-
+    // randomNumber is now guaranteed to be a number by UserQuestionForm
     setIsProcessing(true);
 
     // Simulate payment delay
@@ -51,7 +39,7 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onOpenChange, quest
       userId,
       userName: `User ${userId.substring(5, 9)}`, 
       questionText,
-      randomNumber,
+      randomNumber, // Use the passed-in randomNumber
       timestamp,
       status: 'pending',
       hasUnreadUserMessage: true, 
@@ -96,11 +84,10 @@ const PaymentModal: React.FC<PaymentModalProps> = ({ isOpen, onOpenChange, quest
         <div className="py-4 space-y-3">
           <p className="text-sm font-medium text-foreground">Your Question:</p>
           <p className="p-3 bg-muted rounded-md text-sm max-h-32 overflow-y-auto border border-border">{questionText}</p>
-          {randomNumber && (
-            <p className="text-sm text-muted-foreground">
-              A special number for your question: <span className="font-bold text-accent">{randomNumber}</span>
-            </p>
-          )}
+          {/* Display the randomNumber passed as a prop */}
+          <p className="text-sm text-muted-foreground">
+            Your special number: <span className="font-bold text-accent">{randomNumber}</span>
+          </p>
           <div className="flex items-center justify-center p-4 border border-dashed border-accent/50 rounded-md bg-accent/10">
             <p className="text-lg font-semibold text-accent">Total: $10.00 (Mock Payment)</p>
           </div>

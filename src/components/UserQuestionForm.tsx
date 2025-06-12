@@ -1,20 +1,32 @@
+
 "use client";
 import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, Send } from 'lucide-react';
+import { HelpCircle, Send, Shuffle, Loader2 } from 'lucide-react'; // Added Shuffle and Loader2
 import PaymentModal from './PaymentModal';
 import { useRouter } from 'next/navigation';
 
 const UserQuestionForm = () => {
   const [question, setQuestion] = useState('');
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [generatedNumber, setGeneratedNumber] = useState<number | null>(null);
+  const [isNumberGenerating, setIsNumberGenerating] = useState(false);
   const router = useRouter();
+
+  const handleGenerateNumber = async () => {
+    setIsNumberGenerating(true);
+    // Simulate a short delay for UX
+    await new Promise(resolve => setTimeout(resolve, 500));
+    const num = Math.floor(Math.random() * 249) + 1;
+    setGeneratedNumber(num);
+    setIsNumberGenerating(false);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (question.trim()) {
+    if (question.trim() && generatedNumber !== null) {
       setIsPaymentModalOpen(true);
     }
   };
@@ -36,7 +48,7 @@ const UserQuestionForm = () => {
           </CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
-          <CardContent className="px-6 sm:px-8">
+          <CardContent className="px-6 sm:px-8 space-y-4">
             <Textarea
               placeholder="E.g., What do the stars say about my career path this year?"
               value={question}
@@ -46,12 +58,26 @@ const UserQuestionForm = () => {
               required
               aria-label="Your astrological question"
             />
+            <div className="mt-4 space-y-2">
+              <p className="text-sm text-muted-foreground text-center">
+                Generate your Question's special number from 1 to 249
+              </p>
+              <Button
+                  type="button"
+                  onClick={handleGenerateNumber}
+                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-sm hover:shadow-md transition-shadow"
+                  disabled={isNumberGenerating || !!generatedNumber}
+              >
+                  {isNumberGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shuffle className="mr-2 h-4 w-4" />}
+                  {generatedNumber ? `Number Generated: ${generatedNumber}` : 'Generate Number'}
+              </Button>
+            </div>
           </CardContent>
           <CardFooter className="px-6 sm:px-8 pb-6 sm:pb-8">
             <Button 
               type="submit" 
               className="w-full bg-primary hover:bg-primary/90 text-primary-foreground text-lg py-3 rounded-md shadow-md hover:shadow-lg transition-shadow"
-              disabled={!question.trim()}
+              disabled={!question.trim() || generatedNumber === null || isNumberGenerating}
             >
               <Send className="mr-2 h-5 w-5" />
               Proceed to Payment
@@ -59,12 +85,13 @@ const UserQuestionForm = () => {
           </CardFooter>
         </form>
       </Card>
-      {isPaymentModalOpen && (
+      {isPaymentModalOpen && generatedNumber !== null && (
          <PaymentModal
             isOpen={isPaymentModalOpen}
             onOpenChange={setIsPaymentModalOpen}
             questionText={question}
             onPaymentSuccess={handlePaymentSuccess}
+            randomNumber={generatedNumber} 
         />
       )}
     </>
