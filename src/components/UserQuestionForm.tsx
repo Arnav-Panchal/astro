@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
-import { HelpCircle, Send, Shuffle, Loader2 } from 'lucide-react'; // Added Shuffle and Loader2
+import { HelpCircle, Send, Shuffle, Loader2 } from 'lucide-react';
 import PaymentModal from './PaymentModal';
 import { useRouter } from 'next/navigation';
 
@@ -62,15 +62,22 @@ const UserQuestionForm = () => {
               <p className="text-sm text-muted-foreground text-center">
                 Generate your Question's special number from 1 to 249
               </p>
-              <Button
-                  type="button"
-                  onClick={handleGenerateNumber}
-                  className="w-full bg-accent hover:bg-accent/90 text-accent-foreground shadow-sm hover:shadow-md transition-shadow"
-                  disabled={isNumberGenerating || !!generatedNumber}
-              >
-                  {isNumberGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shuffle className="mr-2 h-4 w-4" />}
-                  {generatedNumber ? `Number Generated: ${generatedNumber}` : 'Generate Number'}
-              </Button>
+              <div className="flex items-center gap-3">
+                <Button
+                    type="button"
+                    onClick={handleGenerateNumber}
+                    className="flex-grow bg-accent hover:bg-accent/90 text-accent-foreground shadow-sm hover:shadow-md transition-shadow"
+                    disabled={isNumberGenerating}
+                >
+                    {isNumberGenerating ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shuffle className="mr-2 h-4 w-4" />}
+                    {generatedNumber === null ? 'Generate Number' : 'Re-generate Number'}
+                </Button>
+                {generatedNumber !== null && (
+                  <span className="p-2.5 border border-border rounded-md bg-muted text-foreground font-semibold min-w-[70px] text-center text-sm">
+                    {generatedNumber}
+                  </span>
+                )}
+              </div>
             </div>
           </CardContent>
           <CardFooter className="px-6 sm:px-8 pb-6 sm:pb-8">
