@@ -1,40 +1,42 @@
 
 'use server';
 
-import Stripe from 'stripe';
+import Razorpay from 'razorpay';
+import { randomBytes } from 'crypto';
 
-// Initialize Stripe with your secret key.
-// Ensure process.env.STRIPE_SECRET_KEY is set in your environment.
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2024-06-20', // Use the latest API version
-  typescript: true,
+// Initialize Razorpay with your key and secret.
+// Ensure these are set in your environment variables.
+const razorpay = new Razorpay({
+  key_id: process.env.RAZORPAY_KEY_ID!,
+  key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
-export interface CreatePaymentIntentResponse {
-  clientSecret: string | null;
+export interface CreateRazorpayOrderResponse {
+  orderId?: string;
   error?: string;
 }
 
-export async function createPaymentIntent(
+export async function createRazorpayOrder(
   amount: number // Amount in the smallest currency unit (e.g., paise for INR)
-): Promise<CreatePaymentIntentResponse> {
+): Promise<CreateRazorpayOrderResponse> {
   if (typeof amount !== 'number' || amount <= 0) {
-    return { clientSecret: null, error: "Invalid amount" };
+    return { error: 'Invalid amount' };
   }
+
+  const options = {
+    amount, // amount in the smallest currency unit
+    currency: 'INR',
+    receipt: `receipt_order_${randomBytes(4).toString('hex')}`, // a unique receipt ID
+  };
 
   try {
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: amount,
-      currency: 'inr', // UPI requires INR
-      automatic_payment_methods: {
-        enabled: true, // Stripe will automatically enable compatible payment methods like UPI
-      },
-    });
-    return { clientSecret: paymentIntent.client_secret };
+    const order = await razorpay.orders.create(options);
+    if (!order) {
+      return { error: 'Order creation failed' };
+    }
+    return { orderId: order.id };
   } catch (error: any) {
-    console.error('Error creating PaymentIntent:', error);
-    // Return a generic error message to the client for security
-    return { clientSecret: null, error: "Could not initiate payment. Please try again." };
+    console.error('Error creating Razorpay order:', error);
+    return { error: 'Could not initiate payment. Please try again.' };
   }
 }
-
