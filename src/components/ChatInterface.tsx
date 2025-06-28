@@ -13,11 +13,21 @@ interface ChatInterfaceProps {
   messages: ChatMessage[];
   onSendMessage: (text: string) => void;
   currentUserType: 'user' | 'astrologer';
-  isSending?: boolean; // To show loading state on send button
-  placeholderName?: string; // For astrologer or user avatar fallback
+  isSending?: boolean;
+  placeholderName?: string;
+  onGenerateAiReply?: () => Promise<string | null>;
+  isGeneratingAiReply?: boolean;
 }
 
-const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, currentUserType, isSending, placeholderName }) => {
+const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
+  messages, 
+  onSendMessage, 
+  currentUserType, 
+  isSending, 
+  placeholderName,
+  onGenerateAiReply,
+  isGeneratingAiReply 
+}) => {
   const [inputText, setInputText] = useState('');
   const scrollAreaRef = useRef<HTMLDivElement>(null);
 
@@ -34,6 +44,15 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
     if (inputText.trim() && !isSending) {
       onSendMessage(inputText.trim());
       setInputText('');
+    }
+  };
+
+  const handleGenerateAiReply = async () => {
+    if (onGenerateAiReply && !isGeneratingAiReply) {
+      const reply = await onGenerateAiReply();
+      if (reply) {
+        setInputText(reply);
+      }
     }
   };
 
@@ -107,6 +126,24 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
         </div>
       </ScrollArea>
       <div className="p-4 border-t border-border bg-background/80 backdrop-blur">
+        {onGenerateAiReply && currentUserType === 'astrologer' && (
+          <div className="mb-2">
+            <Button
+                onClick={handleGenerateAiReply}
+                variant="outline"
+                size="sm"
+                className="w-full border-accent/50 text-accent hover:bg-accent/10 hover:text-accent"
+                disabled={isGeneratingAiReply}
+            >
+              {isGeneratingAiReply ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                  <Sparkles className="mr-2 h-4 w-4" />
+              )}
+              Generate Astrological Reply
+            </Button>
+          </div>
+        )}
         <div className="flex items-center gap-3">
           <Textarea
             value={inputText}
@@ -120,9 +157,9 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ messages, onSendMessage, 
                 handleSend();
               }
             }}
-            disabled={isSending}
+            disabled={isSending || isGeneratingAiReply}
           />
-          <Button onClick={handleSend} size="icon" className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg h-11 w-11 shadow-md hover:shadow-lg transition-shadow" disabled={isSending || !inputText.trim()}>
+          <Button onClick={handleSend} size="icon" className="bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg h-11 w-11 shadow-md hover:shadow-lg transition-shadow" disabled={isSending || !inputText.trim() || isGeneratingAiReply}>
             {isSending ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
             <span className="sr-only">Send message</span>
           </Button>

@@ -10,16 +10,21 @@ import { AlertTriangle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { dispatchNotificationUpdate } from '@/components/NotificationBell';
+import { generateAstrologyReply } from '@/ai/flows/astrologer-flow';
+import { useToast } from "@/hooks/use-toast";
+
 
 function AstrologerChatPageContent() {
   const router = useRouter();
   const params = useParams();
   const questionId = typeof params.questionId === 'string' ? params.questionId : undefined;
+  const { toast } = useToast();
 
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [question, setQuestion] = useState<AstroQuestion | null | undefined>(undefined);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const fetchChatData = useCallback(() => {
     if (!questionId) return;
@@ -77,6 +82,29 @@ function AstrologerChatPageContent() {
     setIsSending(false);
   };
 
+  const handleGenerateReply = async (): Promise<string | null> => {
+    if (!question) return null;
+    setIsGenerating(true);
+    try {
+        const result = await generateAstrologyReply({
+            questionText: question.questionText,
+            userName: question.userName,
+            randomNumber: question.randomNumber
+        });
+        return result.reply;
+    } catch (e) {
+        console.error("Error generating AI reply:", e);
+        toast({
+            title: "Error Generating Reply",
+            description: "The cosmic energies seem disturbed. Please try again or write a reply manually.",
+            variant: "destructive",
+        });
+        return null;
+    } finally {
+        setIsGenerating(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex-grow flex flex-col items-center justify-center p-4">
@@ -113,7 +141,15 @@ function AstrologerChatPageContent() {
             </CardContent>
         </Card>
         <div className="flex-grow min-h-0">
-          <ChatInterface messages={messages} onSendMessage={handleSendMessage} currentUserType="astrologer" isSending={isSending} placeholderName="Astrologer" />
+          <ChatInterface 
+            messages={messages} 
+            onSendMessage={handleSendMessage} 
+            currentUserType="astrologer" 
+            isSending={isSending} 
+            placeholderName="Astrologer"
+            onGenerateAiReply={handleGenerateReply}
+            isGeneratingAiReply={isGenerating}
+          />
         </div>
     </div>
   );
